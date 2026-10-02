@@ -120,9 +120,9 @@ export function init(options = {}) {
   let sequence = 0;
   let focusedTextField = null;
   let pendingNetworkCount = 0;
+  let isRecording = true;
   const pendingEncryptions = new Set();
-  const ajaxRequests = new WeakMap();
-  const jqueryDocument = window.jQuery ? window.jQuery(document) : null;
+  const jquery = window.jQuery;
   const filename = options.filename || "browser-interactions.json";
   const groupByParam = options.groupByParam?.trim();
   const unclassifiedGroup = "unclassified";
@@ -131,10 +131,10 @@ export function init(options = {}) {
     return new URLSearchParams(window.location.search).get(groupByParam)?.trim() || unclassifiedGroup;
   });
 
-  function record(type, details, state = readState() || unclassifiedGroup) {
+  function record(type, details, state = readState() || unclassifiedGroup, eventMetadata = {}) {
     const event = {
-      sequence: ++sequence,
-      timestamp: new Date().toISOString(),
+      sequence: eventMetadata.sequence ?? ++sequence,
+      timestamp: eventMetadata.timestamp || new Date().toISOString(),
       type,
       ...details,
     };
@@ -278,23 +278,8 @@ export function init(options = {}) {
     return /\.(?:html?|xhtml|js|mjs|cjs|css|png|jpe?g|gif|svg|webp|avif|ico|bmp|tiff?|woff2?|ttf|otf|eot)$/i.test(pathname);
   }
 
-  function onAjaxSend(event, xhr, settings) {
-    const url = new URL(settings.url, location.href).href;
-    if (isPageResourceRequest(settings, url)) return;
-    pendingNetworkCount += 1;
-    ajaxRequests.set(xhr, {
-      state: readState() || unclassifiedGroup,
-      requestedAt: new Date().toISOString(),
-      requestStartedAt: performance.now(),
-      method: String(settings.type || settings.method || "GET").toUpperCase(),
-      url,
-      body: readAjaxRequestBody(settings.data),
-    });
-  }
-
-  function onAjaxComplete(event, xhr) {
-    const request = ajaxRequests.get(xhr);
-    if (!request) return;
+  function recordAjaxComplete(xhr, request) {
+    if (!isRecording) return;
     const succeeded = xhr.status >= 200 && xhr.status < 300;
     record("network", {
       requestedAt: request.requestedAt,
@@ -303,12 +288,28 @@ export function init(options = {}) {
       response: xhr.status
         ? { status: xhr.status, ok: succeeded, body: readAjaxResponseBody(xhr) }
         : { error: "네트워크 요청에 실패했습니다." },
-    }, request.state);
-    ajaxRequests.delete(xhr);
+    }, request.state, { sequence: request.sequence, timestamp: request.requestedAt });
     pendingNetworkCount = Math.max(0, pendingNetworkCount - 1);
   }
-  jqueryDocument?.on("ajaxSend.eventLabInteractionRecorder", onAjaxSend);
-  jqueryDocument?.on("ajaxComplete.eventLabInteractionRecorder", onAjaxComplete);
+
+  jquery?.ajaxPrefilter((settings, originalSettings, xhr) => {
+    if (!isRecording) return;
+    const url = new URL(settings.url, location.href).href;
+    if (isPageResourceRequest(settings, url)) return;
+    const request = {
+      state: readState() || unclassifiedGroup,
+      requestedAt: new Date().toISOString(),
+      requestStartedAt: performance.now(),
+      sequence: ++sequence,
+      method: String(settings.type || settings.method || "GET").toUpperCase(),
+      url,
+      body: readAjaxRequestBody(settings.data),
+    };
+    pendingNetworkCount += 1;
+    xhr.always(() => {
+      recordAjaxComplete(xhr, request);
+    });
+  });
 
   activeRecorder = {
     exportJson,
@@ -318,11 +319,11 @@ export function init(options = {}) {
       sequence = 0;
     },
     stop() {
+      isRecording = false;
       document.removeEventListener("click", onClick, true);
       document.removeEventListener("focusin", onFocusin, true);
       document.removeEventListener("blur", onBlur, true);
       document.removeEventListener("keydown", onKeydown, true);
-      jqueryDocument?.off(".eventLabInteractionRecorder");
       activeRecorder = undefined;
     },
   };
