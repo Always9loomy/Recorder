@@ -109,7 +109,7 @@ function normalizeJsonFilename(filename, fallback) {
 /**
  * Starts recording browser interactions.
  *
- * @param {{ filename?: string, groupByParam?: string, getState?: () => string, tranData?: Record<string, { tranId: string, desc?: string }> }} options
+ * @param {{ filename?: string, groupByParam?: string, getState?: () => string, tranData?: Record<string, { tranId: string, desc?: string }>, currentStage?: string, currentWas?: string }} options
  * @returns {{ exportJson: (filename?: string) => object, getSnapshot: () => object, clear: () => void, stop: () => void }}
  */
 export function init(options = {}) {
@@ -148,6 +148,10 @@ export function init(options = {}) {
       version: 3,
       exportedAt: new Date().toISOString(),
       grouping: { queryParam: groupByParam || null },
+      serverStatus: {
+        currentStage: options.currentStage || null,
+        currentWas: options.currentWas || null,
+      },
       testEnvironment: getTestEnvironment(),
       eventsByState,
     };

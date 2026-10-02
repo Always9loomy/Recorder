@@ -24,6 +24,11 @@ h1 { margin: 0; font-size: clamp(38px, 6vw, 68px); line-height: 1.06; letter-spa
 .hidden { display: none !important; }
 .viewer { animation: reveal .32s ease-out; }
 @keyframes reveal { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+.server-status { display: flex; align-items: center; flex-wrap: wrap; gap: 10px; margin-bottom: 20px; padding: 12px 15px; border: 1px solid #dce5fa; border-radius: 14px; background: linear-gradient(110deg, #eef3ff, #fff); }
+.server-status > div { display: flex; align-items: center; gap: 9px; min-width: 0; }
+.server-status > div + div { border-left: 1px solid #d9e0ee; padding-left: 15px; }
+.server-status span { color: #758096; font-size: 12px; font-weight: 750; white-space: nowrap; }
+.server-status strong { overflow: hidden; color: #2949b4; font-size: 14px; font-weight: 850; text-overflow: ellipsis; white-space: nowrap; }
 .overview { display: flex; align-items: end; justify-content: space-between; gap: 20px; margin-bottom: 25px; }
 .overview h2 { margin: 0; font-size: 31px; letter-spacing: -.055em; }
 .overview p { margin: 8px 0 0; color: #788297; font-size: 14px; }

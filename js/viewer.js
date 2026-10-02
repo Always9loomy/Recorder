@@ -142,7 +142,8 @@ function renderTimeline() {
     const responseBody = responsePayload?.responseMessage?.body
       ?? responsePayload?.receivedFormData?.body
       ?? responsePayload;
-    const serverReportedError = responseBody?.isError === true;
+    const isErrorValue = responseBody?.isError;
+    const serverReportedError = isErrorValue === true || (typeof isErrorValue === "string" && isErrorValue.trim().toLowerCase() === "true");
     const networkFailed = Boolean(event.response?.error || event.response?.ok === false || serverReportedError);
       const details = ["click", "radio"].includes(event.type) && event.pointer ? `좌표 ${event.pointer.x}, ${event.pointer.y}` : event.type === "input" ? "포커스를 벗어날 때 최종 입력값을 기록" : event.type === "network" && event.response?.error ? `요청 실패 · ${event.response.error}` : event.type === "keydown" && event.code ? event.code : "";
     const title = group.kind === "typing" ? `키 입력 · ${composeHangul(group.text)}` : labelFor(event);
@@ -198,6 +199,10 @@ function renderTestEnvironment(environment) {
 }
 function render(data, filename) {
   states = data.eventsByState;
+  const serverStatus = data.serverStatus || {};
+  $("#current-stage").textContent = serverStatus.currentStage || "—";
+  $("#current-was").textContent = serverStatus.currentWas || "—";
+  $("#server-status").classList.toggle("hidden", !serverStatus.currentStage && !serverStatus.currentWas);
   const allEvents = Object.values(states).flat().sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
   const first = allEvents[0]?.timestamp, last = allEvents.at(-1)?.timestamp;
   $("#file-name").textContent = filename;
