@@ -130,6 +130,9 @@ function renderTimeline() {
     return result;
   }, []);
   $("#state-count").textContent = blocks.length;
+  const stateStepper = $("#state-stepper");
+  stateStepper.innerHTML = blocks.map((block, index) => `${index ? '<span class="state-step-arrow" aria-hidden="true">→</span>' : ""}<button class="state-step${index === 0 ? " is-current" : ""}" type="button" data-step-index="${index}"${index === 0 ? ' aria-current="step"' : ""} aria-label="${index + 1}번째 state ${escapeHtml(block.state)}로 이동"><span class="step-number">${String(index + 1).padStart(2, "0")}</span><span class="step-name">${escapeHtml(block.state)}</span></button>`).join("");
+  stateStepper.classList.toggle("hidden", blocks.length < 2);
   $("#timeline").innerHTML = blocks.length ? blocks.map((block, index) => {
     const groupedEvents = groupEvents(block.events);
     const eventCards = groupedEvents.map((group) => {
@@ -145,6 +148,7 @@ function renderTimeline() {
     const title = group.kind === "typing" ? `키 입력 · ${composeHangul(group.text)}` : labelFor(event);
     const groupedDetail = group.kind === "typing" && group.events.length > 1 ? `${group.events.length}개 키 입력을 하나의 문장으로 묶음` : details;
     const networkMeta = event.type === "network" ? `<div class="network-meta"><span>요청 시간<strong>${escapeHtml(formatTime(event.requestedAt || event.timestamp))}</strong></span><span>응답 시간<strong>${event.responseTimeMs == null ? "—" : `${escapeHtml(event.responseTimeMs.toLocaleString("ko-KR"))}ms`}</strong></span></div>` : "";
+    const requestInfo = event.type === "network" && (event.reqName || event.desc) ? `<span class="network-request-info"${event.desc ? ` title="${escapeHtml(event.desc)}"` : ""}>${event.reqName ? `<strong>${escapeHtml(event.reqName)}</strong>` : ""}${event.desc ? `<span>${escapeHtml(event.desc)}</span>` : ""}</span>` : "";
     const requestData = event.request?.body?.body ?? null;
     const responseData = responseBody
       ?? event.response?.error
@@ -159,12 +163,12 @@ function renderTimeline() {
     }
     const targetLine = event.type === "network" ? "" : `<p class="target">${escapeHtml(targetFor(event))}${selector ? ` <code>${escapeHtml(selector)}</code>` : ""}</p>`;
     const networkClass = event.type === "network" ? ` network-event ${networkFailed ? "network-failure" : "network-success"}` : "";
-    return `<article class="event${networkClass}"><div class="event-head"><div class="event-title"><span class="event-kind">${iconFor(event)}</span>${escapeHtml(title)}</div><time>${escapeHtml(formatTime(event.timestamp))}</time></div>${targetLine}${groupedDetail ? `<p class="detail">${escapeHtml(groupedDetail)}</p>` : ""}${networkMeta}${networkData}</article>`;
+    return `<article class="event${networkClass}"><div class="event-head"><div class="event-title"><span class="event-kind">${iconFor(event)}</span>${escapeHtml(title)}${requestInfo}</div><time>${escapeHtml(formatTime(event.timestamp))}</time></div>${targetLine}${groupedDetail ? `<p class="detail">${escapeHtml(groupedDetail)}</p>` : ""}${networkMeta}${networkData}</article>`;
     }).join("");
     const startedAt = block.events[0]?.timestamp;
     const endedAt = blocks[index + 1]?.events[0]?.timestamp || block.events.at(-1)?.timestamp;
     const dwellTime = formatDuration(new Date(endedAt) - new Date(startedAt));
-    return `<details class="journey-block" open><summary class="block-head"><div class="block-title"><span class="block-index">${String(index + 1).padStart(2, "0")}</span><span class="state-name">${escapeHtml(block.state)}</span></div><span class="block-times"><span>처음 접근 <strong>${escapeHtml(formatTime(startedAt))}</strong></span><span>머문 시간 <strong>${escapeHtml(dwellTime)}</strong></span></span></summary><div class="event-list">${eventCards}</div></details>`;
+    return `<details class="journey-block" id="journey-block-${index}" open><summary class="block-head"><div class="block-title"><span class="block-index">${String(index + 1).padStart(2, "0")}</span><span class="state-name">${escapeHtml(block.state)}</span></div><span class="block-times"><span>처음 접근 <strong>${escapeHtml(formatTime(startedAt))}</strong></span><span>머문 시간 <strong>${escapeHtml(dwellTime)}</strong></span></span></summary><div class="event-list">${eventCards}</div></details>`;
   }).join("") : '<div class="empty">기록된 행동이 없습니다.</div>';
 }
 function renderTestEnvironment(environment) {
@@ -221,6 +225,22 @@ function loadFile(file) {
 $("#select-button").addEventListener("click", () => input.click());
 input.addEventListener("change", () => loadFile(input.files[0]));
 $("#new-file").addEventListener("click", () => { viewer.classList.add("hidden"); uploadScreen.classList.remove("hidden"); input.value = ""; });
+$("#state-stepper").addEventListener("click", (event) => {
+  const button = event.target.closest("[data-step-index]");
+  if (!button) return;
+  const block = $(`#journey-block-${button.dataset.stepIndex}`);
+  if (!block) return;
+  block.open = true;
+  $("#state-stepper").querySelectorAll(".state-step").forEach((step) => {
+    const selected = step === button;
+    step.classList.toggle("is-current", selected);
+    if (selected) step.setAttribute("aria-current", "step");
+    else step.removeAttribute("aria-current");
+  });
+  const stepper = $("#state-stepper");
+  const targetTop = window.scrollY + block.getBoundingClientRect().top - stepper.getBoundingClientRect().height - 18;
+  window.scrollTo({ top: Math.max(0, targetTop), behavior: "smooth" });
+});
 ["dragenter", "dragover"].forEach((type) => dropZone.addEventListener(type, (event) => { event.preventDefault(); dropZone.classList.add("dragging"); }));
 ["dragleave", "drop"].forEach((type) => dropZone.addEventListener(type, (event) => { event.preventDefault(); dropZone.classList.remove("dragging"); }));
 dropZone.addEventListener("drop", (event) => loadFile(event.dataTransfer.files[0]));

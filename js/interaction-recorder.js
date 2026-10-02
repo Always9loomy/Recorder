@@ -109,7 +109,7 @@ function normalizeJsonFilename(filename, fallback) {
 /**
  * Starts recording browser interactions.
  *
- * @param {{ filename?: string, groupByParam?: string, getState?: () => string }} options
+ * @param {{ filename?: string, groupByParam?: string, getState?: () => string, tranData?: Record<string, { tranId: string, desc?: string }> }} options
  * @returns {{ exportJson: (filename?: string) => object, getSnapshot: () => object, clear: () => void, stop: () => void }}
  */
 export function init(options = {}) {
@@ -123,6 +123,7 @@ export function init(options = {}) {
   let isRecording = true;
   const pendingEncryptions = new Set();
   const jquery = window.jQuery;
+  const tranData = options.tranData && typeof options.tranData === "object" ? options.tranData : {};
   const filename = options.filename || "browser-interactions.json";
   const groupByParam = options.groupByParam?.trim();
   const unclassifiedGroup = "unclassified";
@@ -288,6 +289,8 @@ export function init(options = {}) {
       response: xhr.status
         ? { status: xhr.status, ok: succeeded, body: readAjaxResponseBody(xhr) }
         : { error: "네트워크 요청에 실패했습니다." },
+      reqName: request.reqName || null,
+      desc: request.desc || null,
     }, request.state, { sequence: request.sequence, timestamp: request.requestedAt });
     pendingNetworkCount = Math.max(0, pendingNetworkCount - 1);
   }
@@ -296,6 +299,9 @@ export function init(options = {}) {
     if (!isRecording) return;
     const url = new URL(settings.url, location.href).href;
     if (isPageResourceRequest(settings, url)) return;
+    const body = readAjaxRequestBody(settings.data);
+    const tranId = body?.header?.tranId;
+    const tranEntry = Object.entries(tranData).find(([, info]) => info?.tranId === tranId);
     const request = {
       state: readState() || unclassifiedGroup,
       requestedAt: new Date().toISOString(),
@@ -303,7 +309,9 @@ export function init(options = {}) {
       sequence: ++sequence,
       method: String(settings.type || settings.method || "GET").toUpperCase(),
       url,
-      body: readAjaxRequestBody(settings.data),
+      body,
+      reqName: tranEntry?.[0] || null,
+      desc: tranEntry?.[1]?.desc || null,
     };
     pendingNetworkCount += 1;
     xhr.always(() => {
