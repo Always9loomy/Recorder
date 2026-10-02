@@ -270,14 +270,24 @@ export function init(options = {}) {
     }
   }
 
+  function isPageResourceRequest(settings, url) {
+    const dataType = String(settings.dataType || "").toLowerCase();
+    if (["html", "script", "jsonp"].includes(dataType)) return true;
+
+    const pathname = new URL(url, location.href).pathname;
+    return /\.(?:html?|xhtml|js|mjs|cjs|css|png|jpe?g|gif|svg|webp|avif|ico|bmp|tiff?|woff2?|ttf|otf|eot)$/i.test(pathname);
+  }
+
   function onAjaxSend(event, xhr, settings) {
+    const url = new URL(settings.url, location.href).href;
+    if (isPageResourceRequest(settings, url)) return;
     pendingNetworkCount += 1;
     ajaxRequests.set(xhr, {
       state: readState() || unclassifiedGroup,
       requestedAt: new Date().toISOString(),
       requestStartedAt: performance.now(),
       method: String(settings.type || settings.method || "GET").toUpperCase(),
-      url: new URL(settings.url, location.href).href,
+      url,
       body: readAjaxRequestBody(settings.data),
     });
   }
