@@ -135,13 +135,20 @@ function renderTimeline() {
     const eventCards = groupedEvents.map((group) => {
     const event = group.first;
     const selector = event.element?.selector;
+    const responsePayload = event.response?.body;
+    const responseBody = responsePayload?.responseMessage?.body
+      ?? responsePayload?.receivedFormData?.body
+      ?? responsePayload;
+    const serverReportedError = responseBody?.isError === true;
+    const networkFailed = Boolean(event.response?.error || event.response?.ok === false || serverReportedError);
       const details = ["click", "radio"].includes(event.type) && event.pointer ? `좌표 ${event.pointer.x}, ${event.pointer.y}` : event.type === "input" ? "포커스를 벗어날 때 최종 입력값을 기록" : event.type === "network" && event.response?.error ? `요청 실패 · ${event.response.error}` : event.type === "keydown" && event.code ? event.code : "";
     const title = group.kind === "typing" ? `키 입력 · ${composeHangul(group.text)}` : labelFor(event);
     const groupedDetail = group.kind === "typing" && group.events.length > 1 ? `${group.events.length}개 키 입력을 하나의 문장으로 묶음` : details;
     const networkMeta = event.type === "network" ? `<div class="network-meta"><span>요청 시간<strong>${escapeHtml(formatTime(event.requestedAt || event.timestamp))}</strong></span><span>응답 시간<strong>${event.responseTimeMs == null ? "—" : `${escapeHtml(event.responseTimeMs.toLocaleString("ko-KR"))}ms`}</strong></span></div>` : "";
     const requestData = event.request?.body?.body ?? null;
-    const responsePayload = event.response?.body;
-    const responseData = responsePayload?.responseMessage?.body ?? responsePayload?.receivedFormData?.body ?? event.response?.error ?? null;
+    const responseData = responseBody
+      ?? event.response?.error
+      ?? null;
     let networkData = "";
     if (event.type === "network") {
       const requestDetailId = `network-detail-${++networkDetailSequence}`;
@@ -151,7 +158,7 @@ function renderTimeline() {
       networkData = `<div class="network-data"><section><div class="network-data-head"><h3>요청값</h3><button class="detail-button" type="button" data-network-detail="${requestDetailId}">자세히 보기</button></div><pre>${escapeHtml(JSON.stringify(requestData, null, 2))}</pre></section><section><div class="network-data-head"><h3>응답값</h3><button class="detail-button" type="button" data-network-detail="${responseDetailId}">자세히 보기</button></div><pre>${escapeHtml(JSON.stringify(responseData, null, 2))}</pre></section></div>`;
     }
     const targetLine = event.type === "network" ? "" : `<p class="target">${escapeHtml(targetFor(event))}${selector ? ` <code>${escapeHtml(selector)}</code>` : ""}</p>`;
-    const networkClass = event.type === "network" ? ` network-event ${event.response?.error || event.response?.ok === false ? "network-failure" : "network-success"}` : "";
+    const networkClass = event.type === "network" ? ` network-event ${networkFailed ? "network-failure" : "network-success"}` : "";
     return `<article class="event${networkClass}"><div class="event-head"><div class="event-title"><span class="event-kind">${iconFor(event)}</span>${escapeHtml(title)}</div><time>${escapeHtml(formatTime(event.timestamp))}</time></div>${targetLine}${groupedDetail ? `<p class="detail">${escapeHtml(groupedDetail)}</p>` : ""}${networkMeta}${networkData}</article>`;
     }).join("");
     const startedAt = block.events[0]?.timestamp;

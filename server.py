@@ -108,6 +108,8 @@ class Handler(SimpleHTTPRequestHandler):
         time.sleep(delay_ms / 1000)
         force_error = form_data.get("forceError") == "true"
         long_response = form_data.get("longResponse") == "true"
+        empty_response_body = form_data.get("emptyResponseBody") == "true"
+        error_flag_response_body = form_data.get("errorFlagResponseBody") == "true"
         response_body = {
             "resultCode": "E500" if force_error else "S000",
             "resultMessage": "요청 처리 중 오류가 발생했습니다." if force_error else "요청이 정상적으로 처리되었습니다.",
@@ -129,6 +131,10 @@ class Handler(SimpleHTTPRequestHandler):
                 }
                 for index in range(1, 121)
             ]
+        if empty_response_body:
+            response_body = {}
+        if error_flag_response_body:
+            response_body = {"isError": True, "resultMessage": "서버 응답 body에서 오류 플래그를 반환했습니다."}
         response = json.dumps({
             "ok": not force_error,
             "message": "의도적으로 오류 응답을 반환했습니다." if force_error else "POST 요청을 정상적으로 처리했습니다.",

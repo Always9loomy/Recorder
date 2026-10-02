@@ -131,7 +131,7 @@
               <div class="field"><label for="tran-id">header.tranId 값</label><input id="tran-id" type="text" placeholder="예: TRX-20260901-001" autocomplete="off" /></div>
             </div>
             <p class="request-status">자동 body: <code>orderId</code>, <code>amount</code>, <code>requestToken</code></p>
-            <div class="request-actions"><button class="button" id="post-request" type="button">POST 요청 보내기</button><button class="button" id="long-response-request" type="button">긴 응답 요청 보내기</button><p class="request-status" id="request-status" aria-live="polite">요청 대기 중</p></div>
+            <div class="request-actions"><button class="button" id="post-request" type="button">POST 요청 보내기</button><button class="button" id="long-response-request" type="button">긴 응답 요청 보내기</button><button class="button" id="empty-response-request" type="button">빈 응답 body `{}` 테스트</button><button class="button" id="error-flag-response-request" type="button">응답 body isError 테스트</button><p class="request-status" id="request-status" aria-live="polite">요청 대기 중</p></div>
             <section class="error-request" aria-labelledby="error-request-title">
               <h3 id="error-request-title">오류 응답 테스트</h3>
               <p>별도의 지연 시간과 tranId로 HTTP 500 오류 응답을 시험합니다.</p>
@@ -226,6 +226,8 @@
 
       const requestButton = document.querySelector("#post-request");
       const longResponseButton = document.querySelector("#long-response-request");
+      const emptyResponseButton = document.querySelector("#empty-response-request");
+      const errorFlagResponseButton = document.querySelector("#error-flag-response-request");
       const errorRequestButton = document.querySelector("#post-error-request");
       const requestStatus = document.querySelector("#request-status");
       const requestLoading = document.querySelector("#request-loading");
@@ -237,7 +239,7 @@
           requestToken: crypto.randomUUID(),
         };
       }
-      function sendPostRequest({ delayInput, tranIdInput, button, forceError = false, longResponse = false }) {
+      function sendPostRequest({ delayInput, tranIdInput, button, forceError = false, longResponse = false, emptyResponseBody = false, errorFlagResponseBody = false }) {
         const delayMs = Number(document.querySelector(delayInput).value);
         if (!Number.isFinite(delayMs) || delayMs < 0 || delayMs > 15000) {
           requestStatus.textContent = "응답 지연 시간은 0~15,000ms 사이로 입력해 주세요.";
@@ -256,6 +258,8 @@
         formData.append("body", JSON.stringify(body));
         formData.append("forceError", String(forceError));
         formData.append("longResponse", String(longResponse));
+        formData.append("emptyResponseBody", String(emptyResponseBody));
+        formData.append("errorFlagResponseBody", String(errorFlagResponseBody));
         button.disabled = true;
         requestStatus.innerHTML = '<span class="spinner"></span>서버 응답을 기다리는 중…';
         requestLoading.hidden = false;
@@ -285,6 +289,8 @@
       }
       requestButton.addEventListener("click", () => sendPostRequest({ delayInput: "#response-delay", tranIdInput: "#tran-id", button: requestButton }));
       longResponseButton.addEventListener("click", () => sendPostRequest({ delayInput: "#response-delay", tranIdInput: "#tran-id", button: longResponseButton, longResponse: true }));
+      emptyResponseButton.addEventListener("click", () => sendPostRequest({ delayInput: "#response-delay", tranIdInput: "#tran-id", button: emptyResponseButton, emptyResponseBody: true }));
+      errorFlagResponseButton.addEventListener("click", () => sendPostRequest({ delayInput: "#response-delay", tranIdInput: "#tran-id", button: errorFlagResponseButton, errorFlagResponseBody: true }));
       errorRequestButton.addEventListener("click", () => sendPostRequest({ delayInput: "#error-response-delay", tranIdInput: "#error-tran-id", button: errorRequestButton, forceError: true }));
 
       if (isReload || !validStates.has(new URLSearchParams(location.search).get("state"))) goHome();
