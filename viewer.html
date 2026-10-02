@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Journey Viewer</title>
+    <link rel="stylesheet" href="./css/viewer.css" />
+  </head>
+  <body>
+    <div class="shell">
+      <header>
+        <div class="brand"><span class="brand-mark">↗</span> Journey Viewer</div>
+        <span class="file-name" id="file-name">JSON 파일을 기다리는 중</span>
+      </header>
+      <main>
+        <section id="upload-screen">
+          <div class="hero"><p class="eyebrow">Interaction replay</p><h1>사용자의 여정을<br />한눈에 살펴보세요</h1><p>Recorder가 추출한 JSON 파일을 올리면, 화면 상태별 행동을 시간순으로 정리해 보여드립니다.</p></div>
+          <div class="drop-zone" id="drop-zone">
+            <input id="file-input" type="file" accept="application/json,.json" />
+            <div><div class="drop-icon">↓</div><h2>여기에 JSON 파일을 놓아주세요</h2><p>또는 컴퓨터에서 파일을 선택하세요</p><button class="select-button" id="select-button" type="button">JSON 파일 선택</button></div>
+          </div>
+          <p class="error hidden" id="error" role="alert"></p>
+        </section>
+        <section class="viewer hidden" id="viewer">
+          <div class="overview"><div><h2>사용자 여정</h2><p id="journey-meta"></p></div><button class="new-file" id="new-file" type="button">다른 파일 열기</button></div>
+          <section class="test-environment" id="test-environment" aria-labelledby="environment-title"><div class="environment-heading"><span>테스트 환경</span><strong id="environment-title">기록 환경 정보</strong></div><div class="environment-items" id="environment-items"></div><p class="environment-note hidden" id="environment-note"></p></section>
+          <div class="metrics"><div class="metric"><span>기록된 행동</span><strong id="event-count">0</strong></div><div class="metric"><span>여정 구간</span><strong id="state-count">0</strong></div><div class="metric"><span>여정 시간</span><strong id="duration">—</strong></div></div>
+          <p class="timeline-note">행동이 기록된 시간 순서대로 표시됩니다. 상태가 바뀌면 새로운 여정 구간이 시작됩니다.</p>
+          <div class="timeline" id="timeline"></div>
+        </section>
+      </main>
+    </div>
+    <dialog class="detail-dialog" id="detail-dialog">
+      <div class="dialog-head"><h2 id="detail-dialog-title">상세값</h2><button class="dialog-close" id="detail-dialog-close" type="button">닫기</button></div>
+      <div class="dialog-toolbar">
+        <input class="dialog-search" id="detail-search" type="search" placeholder="키워드 검색" autocomplete="off" />
+        <button class="dialog-tool-button" id="detail-case-sensitive" type="button" aria-label="대소문자 구분" title="대소문자 구분" aria-pressed="true"><svg viewBox="0 0 28 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="5" cy="7" r="3"></circle><path d="M8 4v6"></path><path d="M10 20 18 4"></path><path d="m18 21 3.5-8 3.5 8"></path><path d="M19 18h5"></path></svg></button>
+        <span class="search-count" id="detail-search-count">0 / 0</span>
+        <button class="dialog-tool-button" id="detail-search-first" type="button" disabled>처음</button>
+        <button class="dialog-tool-button" id="detail-search-prev" type="button" disabled>이전</button>
+        <button class="dialog-tool-button" id="detail-search-next" type="button" disabled>다음</button>
+        <button class="dialog-tool-button copy-button" id="detail-copy" type="button">클립보드 복사</button>
+      </div>
+      <pre id="detail-dialog-content"></pre>
+    </dialog>
+    <div class="utility" id="utility">
+      <div class="utility-menu" id="utility-menu"><button class="utility-item" id="open-compare" type="button">텍스트 비교</button></div>
+      <button class="utility-main" id="utility-main" type="button" aria-label="유틸리티 메뉴" aria-expanded="false" aria-controls="utility-menu">+</button>
+    </div>
+    <dialog class="compare-dialog" id="compare-dialog">
+      <div class="dialog-head"><h2>텍스트 비교</h2><button class="dialog-close" id="compare-close" type="button">닫기</button></div>
+      <div class="compare-body">
+        <div class="compare-grid">
+          <div class="compare-pane"><div class="compare-pane-head"><label for="compare-left">Text A</label><button class="editor-clear" id="compare-left-clear" type="button">전체 지우기</button></div><textarea id="compare-left" spellcheck="false" aria-label="왼쪽 텍스트 편집기" placeholder="비교할 첫 번째 내용을 입력하세요."></textarea></div>
+          <div class="compare-pane"><div class="compare-pane-head"><label for="compare-right">Text B</label><button class="editor-clear" id="compare-right-clear" type="button">전체 지우기</button></div><textarea id="compare-right" spellcheck="false" aria-label="오른쪽 텍스트 편집기" placeholder="비교할 두 번째 내용을 입력하세요."></textarea></div>
+        </div>
+        <div class="compare-resizer hidden" id="compare-resizer" role="separator" aria-label="입력 영역과 결과 영역 크기 조절"></div>
+        <div class="compare-actions"><button class="compare-run" id="compare-run" type="button">비교하기</button><p class="compare-result" id="compare-result">양쪽 편집기에 비교할 내용을 입력해 주세요.</p></div>
+        <div class="diff-view hidden" id="compare-diff"><div class="diff-output diff-left" id="compare-diff-left-scroll"><div class="diff-header"><span>Text A</span></div><div class="diff-rows" id="compare-diff-left-rows"></div></div><div class="diff-output diff-right" id="compare-diff-right-scroll"><div class="diff-header"><span>Text B</span></div><div class="diff-rows" id="compare-diff-right-rows"></div></div><div class="diff-minimap" id="compare-minimap" aria-label="변경 위치 미니맵"><div class="minimap-viewport" id="minimap-viewport"></div></div></div>
+      </div>
+    </dialog>
+    <script src="./js/viewer.js"></script>
+  </body>
+</html>

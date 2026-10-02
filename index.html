@@ -1,0 +1,299 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Event Lab</title>
+    <style>
+      :root { color: #172033; background: #f5f7fc; font-family: Inter, Pretendard, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+      * { box-sizing: border-box; }
+      body { margin: 0; }
+      button, input, textarea { font: inherit; }
+      .topbar { position: sticky; top: 0; display: flex; align-items: center; justify-content: space-between; max-width: 1040px; margin: auto; padding: 18px 28px; background: rgba(245,247,252,.92); backdrop-filter: blur(12px); }
+      .brand { color: #172033; font-weight: 800; letter-spacing: -.04em; text-decoration: none; }
+      nav { display: flex; gap: 6px; }
+      nav a { padding: 8px 12px; border-radius: 9px; color: #677085; text-decoration: none; font-size: 14px; font-weight: 650; }
+      nav a:hover, nav a[aria-current="page"] { color: #3159e8; background: #e7edff; }
+      main { max-width: 1040px; margin: auto; padding: 54px 28px 70px; }
+      .page { display: none; animation: enter .22s ease-out; }
+      .page.active { display: block; }
+      @keyframes enter { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+      .eyebrow { margin: 0 0 12px; color: #3159e8; font-size: 13px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; }
+      h1 { max-width: 700px; margin: 0; font-size: clamp(36px, 6vw, 64px); line-height: 1.08; letter-spacing: -.065em; }
+      .intro { max-width: 620px; margin: 22px 0 34px; color: #677085; font-size: 17px; line-height: 1.7; }
+      .button { display: inline-flex; align-items: center; justify-content: center; border: 0; border-radius: 11px; padding: 12px 17px; background: #3159e8; color: white; cursor: pointer; text-decoration: none; font-weight: 750; }
+      .button:hover { background: #2447c7; }
+      .cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-top: 66px; }
+      .card, .playground { padding: 21px; border: 1px solid #e3e7f0; border-radius: 16px; background: white; }
+      .card strong { display: block; margin-bottom: 8px; }
+      .card span { color: #7b8495; font-size: 14px; line-height: 1.55; }
+      .section-title { margin: 0 0 10px; font-size: 34px; letter-spacing: -.05em; }
+      .section-description { margin: 0 0 28px; color: #697386; }
+      .notice-list { padding: 0; margin: 0; list-style: none; border-top: 1px solid #dfe4ee; }
+      .notice-list li { display: flex; justify-content: space-between; gap: 18px; padding: 19px 5px; border-bottom: 1px solid #dfe4ee; }
+      .notice-list p { margin: 0; font-weight: 700; }
+      .notice-list time { color: #8992a3; font-size: 14px; white-space: nowrap; }
+      .playground { max-width: 600px; padding: 28px; }
+      label { display: block; margin-bottom: 8px; font-size: 14px; font-weight: 700; }
+      input { width: 100%; padding: 12px; border: 1px solid #d5dbe7; border-radius: 10px; outline-color: #3159e8; }
+      .radio-test { margin: 20px 0 0; padding: 16px; border: 1px solid #e1e6ef; border-radius: 12px; }
+      .radio-test legend { padding: 0 6px; font-size: 14px; font-weight: 750; }
+      .radio-options { display: flex; flex-wrap: wrap; gap: 9px; }
+      .radio-option { display: flex; align-items: center; gap: 7px; margin: 0; padding: 9px 11px; border: 1px solid #dbe1ec; border-radius: 9px; background: #f8f9fc; cursor: pointer; font-size: 13px; font-weight: 650; }
+      .radio-option:has(input:checked) { border-color: #8fa6f2; background: #e9eeff; color: #3159e8; }
+      .radio-option input { width: auto; margin: 0; padding: 0; accent-color: #3159e8; }
+      .actions { display: flex; flex-wrap: wrap; gap: 9px; margin-top: 17px; }
+      .actions .button { background: #eef1f7; color: #354052; }
+      .actions .button:hover { background: #e1e6ef; }
+      .result { min-height: 25px; margin: 18px 0 0; color: #3159e8; font-weight: 700; }
+      .ajax-result { margin-top: 12px; padding: 12px 14px; border-radius: 10px; background: #f3f6ff; color: #3159e8; font: 13px/1.55 ui-monospace, SFMono-Regular, Menlo, monospace; white-space: pre-wrap; }
+      .request-lab { margin-top: 20px; padding-top: 22px; border-top: 1px solid #e5e9f1; }
+      .request-lab h2 { margin: 0 0 6px; font-size: 19px; letter-spacing: -.04em; }
+      .request-lab > p { margin: 0 0 18px; color: #7a8496; font-size: 13px; line-height: 1.55; }
+      .request-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 13px; }
+      .field label { margin-bottom: 7px; }
+      .field input { padding: 10px 11px; }
+      .request-actions { display: flex; align-items: center; gap: 12px; margin-top: 16px; }
+      .request-actions .button { background: #3159e8; color: #fff; }
+      .request-actions .button:disabled { cursor: wait; opacity: .65; }
+      .request-status { margin: 0; color: #667187; font-size: 13px; }
+      .spinner { display: inline-block; width: 13px; height: 13px; margin-right: 6px; border: 2px solid #c3cdf2; border-top-color: #3159e8; border-radius: 50%; vertical-align: -2px; animation: spin .65s linear infinite; }
+      @keyframes spin { to { transform: rotate(360deg); } }
+      .request-loading { display: flex; align-items: center; justify-content: center; gap: 10px; min-height: 82px; margin-top: 15px; border: 1px solid #dce4fb; border-radius: 10px; background: #f3f6ff; color: #3159e8; font-size: 14px; font-weight: 750; }
+      .request-loading .spinner { width: 17px; height: 17px; margin: 0; }
+      .error-request { margin-top: 18px; padding: 17px; border: 1px solid #f0cccc; border-radius: 12px; background: #fff8f8; }
+      .error-request h3 { margin: 0 0 6px; color: #9e3737; font-size: 16px; letter-spacing: -.03em; }
+      .error-request p { margin: 0 0 14px; color: #917070; font-size: 13px; }
+      .error-request .button { background: #bd4141; color: #fff; }
+      .error-request .button:hover { background: #9f3030; }
+      .response { min-height: 0; max-height: 220px; margin: 15px 0 0; padding: 13px; overflow: auto; border-radius: 10px; background: #172033; color: #d8e0f8; font: 12px/1.55 ui-monospace, SFMono-Regular, Menlo, monospace; white-space: pre-wrap; }
+      .route { margin-top: 40px; color: #8891a2; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 13px; }
+      @media (max-width: 600px) { .topbar { padding: 16px 20px; } main { padding: 42px 20px; } .cards, .request-grid { grid-template-columns: 1fr; margin-top: 45px; } .request-grid { margin-top: 0; } .request-actions { align-items: start; flex-direction: column; } }
+    </style>
+  </head>
+  <body>
+    <header class="topbar">
+      <a class="brand" href="?state=Front" data-route>Event Lab</a>
+      <nav aria-label="주 메뉴">
+        <a href="?state=Front" data-route>Front</a>
+        <a href="?state=Calculation" data-route>Calculation</a>
+        <a href="?state=Userinfo" data-route>Userinfo</a>
+      </nav>
+    </header>
+    <main>
+      <section class="page" data-page="Front">
+        <p class="eyebrow">SPA event sandbox</p>
+        <h1>사용자 행동을 기록할 준비가 된 작은 홈페이지.</h1>
+        <p class="intro">각 메뉴는 주소의 <code>state</code> 값만 바꾸고 페이지를 새로고침하지 않습니다. 테스트 화면에서 클릭과 입력 이벤트도 만들어 볼 수 있습니다.</p>
+        <a class="button" href="?state=Userinfo" data-route>테스트 시작하기</a>
+        <div class="cards">
+          <div class="card"><strong>상태 기반 라우팅</strong><span><code>?state=Front</code>, <code>?state=Calculation</code>처럼 URL로 화면을 결정합니다.</span></div>
+          <div class="card"><strong>새로고침 없음</strong><span>History API로 URL과 화면을 동기화해 자연스럽게 이동합니다.</span></div>
+          <div class="card"><strong>행동 테스트</strong><span>입력, 클릭, 화면 이동을 빠르게 검증할 수 있습니다.</span></div>
+        </div>
+      </section>
+      <section class="page" data-page="Calculation">
+        <p class="eyebrow">Calculation</p><h1 class="section-title">Calculation</h1>
+        <p class="section-description">샘플 콘텐츠입니다. 항목을 눌러 클릭 이벤트를 테스트할 수 있습니다.</p>
+        <ul class="notice-list">
+          <li><p>Event Lab 테스트 사이트가 준비되었습니다.</p><time>2026.09.01</time></li>
+          <li><p>주소 변경 시 화면을 갱신하는 SPA 라우팅을 적용했습니다.</p><time>2026.08.30</time></li>
+          <li><p>사용자 행동 JSON export 라이브러리를 준비 중입니다.</p><time>2026.08.28</time></li>
+        </ul>
+      </section>
+      <section class="page" data-page="Userinfo">
+        <p class="eyebrow">Userinfo</p><h1 class="section-title">Userinfo</h1>
+        <p class="section-description">아래 요소를 조작해 이벤트 수집 라이브러리를 시험해 보세요.</p>
+        <div class="playground">
+          <label for="name">이름 입력</label>
+          <input id="name" type="text" placeholder="여기에 입력해 보세요" autocomplete="off" />
+          <fieldset class="radio-test">
+            <legend>테스트 플랜 선택</legend>
+            <div class="radio-options">
+              <label class="radio-option"><input id="plan-basic" type="radio" name="test-plan" value="basic" aria-label="기본 플랜" checked />기본</label>
+              <label class="radio-option"><input id="plan-pro" type="radio" name="test-plan" value="pro" aria-label="프로 플랜" />프로</label>
+              <label class="radio-option"><input id="plan-enterprise" type="radio" name="test-plan" value="enterprise" aria-label="엔터프라이즈 플랜" />엔터프라이즈</label>
+            </div>
+          </fieldset>
+          <div class="actions">
+            <button class="button" type="button" data-action="greet">인사하기</button>
+            <button class="button" type="button" data-action="clear">입력 지우기</button>
+            <button class="button" type="button" data-action="count">클릭 수 +1</button>
+            <button class="button" id="ajax-test" type="button">AJAX POST 테스트</button>
+          </div>
+          <p class="result" aria-live="polite"></p>
+          <p class="ajax-result" id="ajax-result" aria-live="polite" hidden></p>
+          <section class="request-lab" aria-labelledby="request-title">
+            <h2 id="request-title">POST 요청 테스트</h2>
+            <p><code>header.tranId</code> 값만 입력하면, <code>body</code>에는 세 개의 랜덤 값이 자동으로 담겨 전송됩니다.</p>
+            <div class="request-grid">
+              <div class="field"><label for="response-delay">응답 지연 시간 (ms)</label><input id="response-delay" type="number" min="0" max="15000" value="1000" step="100" /></div>
+              <div class="field"><label for="tran-id">header.tranId 값</label><input id="tran-id" type="text" placeholder="예: TRX-20260901-001" autocomplete="off" /></div>
+            </div>
+            <p class="request-status">자동 body: <code>orderId</code>, <code>amount</code>, <code>requestToken</code></p>
+            <div class="request-actions"><button class="button" id="post-request" type="button">POST 요청 보내기</button><button class="button" id="long-response-request" type="button">긴 응답 요청 보내기</button><p class="request-status" id="request-status" aria-live="polite">요청 대기 중</p></div>
+            <section class="error-request" aria-labelledby="error-request-title">
+              <h3 id="error-request-title">오류 응답 테스트</h3>
+              <p>별도의 지연 시간과 tranId로 HTTP 500 오류 응답을 시험합니다.</p>
+              <div class="request-grid">
+                <div class="field"><label for="error-response-delay">응답 지연 시간 (ms)</label><input id="error-response-delay" type="number" min="0" max="15000" value="800" step="100" /></div>
+                <div class="field"><label for="error-tran-id">header.tranId 값</label><input id="error-tran-id" type="text" placeholder="예: TRX-ERROR-001" autocomplete="off" /></div>
+              </div>
+              <div class="request-actions"><button class="button" id="post-error-request" type="button">오류 POST 요청 보내기</button></div>
+            </section>
+            <div class="request-loading" id="request-loading" role="status" hidden><span class="spinner"></span>POST 요청을 보내고 응답을 기다리는 중입니다…</div>
+            <pre class="response" id="response-output" hidden></pre>
+          </section>
+        </div>
+      </section>
+      <p class="route">현재 경로: <span id="current-route"></span></p>
+    </main>
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <script>
+      const validStates = new Set(["Front", "Calculation", "Userinfo"]);
+      const pages = document.querySelectorAll("[data-page]");
+      const routeLinks = document.querySelectorAll("[data-route]");
+      const routeDisplay = document.querySelector("#current-route");
+      let clickCount = 0;
+      const navigation = performance.getEntriesByType("navigation")[0];
+      const isReload = navigation?.type === "reload" || performance.navigation?.type === 1;
+
+      function goHome() {
+        const url = new URL(location.href);
+        url.searchParams.set("state", "Front");
+        history.replaceState({}, "", url);
+      }
+
+      function getState() {
+        const state = new URLSearchParams(location.search).get("state");
+        return validStates.has(state) ? state : "Front";
+      }
+      function render() {
+        const state = getState();
+        pages.forEach((page) => page.classList.toggle("active", page.dataset.page === state));
+        routeLinks.forEach((link) => link.toggleAttribute("aria-current", new URL(link.href).searchParams.get("state") === state));
+        routeDisplay.textContent = `?state=${state}`;
+        document.title = `${state} | Event Lab`;
+      }
+      document.addEventListener("click", (event) => {
+        const link = event.target.closest("a[data-route]");
+        if (!link || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+        event.preventDefault();
+        history.pushState({}, "", link.href);
+        render();
+      });
+      addEventListener("popstate", render);
+      const input = document.querySelector("#name");
+      const result = document.querySelector(".result");
+      document.querySelectorAll("input[name='test-plan']").forEach((radio) => radio.addEventListener("change", () => {
+        const selectedLabel = radio.closest("label").textContent.trim();
+        result.textContent = `${selectedLabel} 플랜을 선택했습니다.`;
+      }));
+      document.querySelector("[data-action='greet']").addEventListener("click", () => result.textContent = `${input.value.trim() || "방문자"}님, 안녕하세요!`);
+      document.querySelector("[data-action='clear']").addEventListener("click", () => { input.value = ""; result.textContent = "입력값을 지웠습니다."; input.focus(); });
+      document.querySelector("[data-action='count']").addEventListener("click", () => { clickCount += 1; result.textContent = `버튼을 ${clickCount}번 클릭했습니다.`; });
+
+      const ajaxTestButton = document.querySelector("#ajax-test");
+      const ajaxResult = document.querySelector("#ajax-result");
+      ajaxTestButton.addEventListener("click", () => {
+        ajaxTestButton.disabled = true;
+        ajaxResult.hidden = false;
+        ajaxResult.innerHTML = '<span class="spinner"></span>AJAX 응답을 기다리는 중…';
+        const data = new URLSearchParams({
+          header: JSON.stringify({ tranId: "BABO0123" }),
+          body: JSON.stringify({
+            code: "2000",
+            userId: "USER-001",
+            productName: "테스트 상품",
+            quantity: 3,
+            requestedAt: new Date().toISOString(),
+          }),
+        });
+        $.ajax({
+          url: "/api/ajax-test",
+          method: "POST",
+          contentType: "application/x-www-form-urlencoded; charset=UTF-8",
+          dataType: "json",
+          data: data.toString(),
+        }).done((response) => {
+          ajaxResult.textContent = JSON.stringify(response.responseMessage, null, 2);
+        }).fail((xhr) => {
+          ajaxResult.textContent = `AJAX 요청 실패: ${xhr.status ? `HTTP ${xhr.status}` : "네트워크 오류"}`;
+        }).always(() => {
+          ajaxTestButton.disabled = false;
+        });
+      });
+
+      const requestButton = document.querySelector("#post-request");
+      const longResponseButton = document.querySelector("#long-response-request");
+      const errorRequestButton = document.querySelector("#post-error-request");
+      const requestStatus = document.querySelector("#request-status");
+      const requestLoading = document.querySelector("#request-loading");
+      const responseOutput = document.querySelector("#response-output");
+      function createRandomBody() {
+        return {
+          orderId: `ORD-${Math.floor(100000 + Math.random() * 900000)}`,
+          amount: Math.floor(1000 + Math.random() * 99000),
+          requestToken: crypto.randomUUID(),
+        };
+      }
+      function sendPostRequest({ delayInput, tranIdInput, button, forceError = false, longResponse = false }) {
+        const delayMs = Number(document.querySelector(delayInput).value);
+        if (!Number.isFinite(delayMs) || delayMs < 0 || delayMs > 15000) {
+          requestStatus.textContent = "응답 지연 시간은 0~15,000ms 사이로 입력해 주세요.";
+          return;
+        }
+        const tranId = document.querySelector(tranIdInput).value.trim();
+        if (!tranId) {
+          requestStatus.textContent = "header.tranId 값을 입력해 주세요.";
+          return;
+        }
+        const header = { tranId };
+        const body = createRandomBody();
+        const formData = new FormData();
+        formData.append("delayMs", String(delayMs));
+        formData.append("header", JSON.stringify(header));
+        formData.append("body", JSON.stringify(body));
+        formData.append("forceError", String(forceError));
+        formData.append("longResponse", String(longResponse));
+        button.disabled = true;
+        requestStatus.innerHTML = '<span class="spinner"></span>서버 응답을 기다리는 중…';
+        requestLoading.hidden = false;
+        responseOutput.hidden = true;
+        const startedAt = performance.now();
+        $.ajax({
+          url: "/api/test",
+          method: "POST",
+          data: formData,
+          processData: false,
+          contentType: false,
+          dataType: "json",
+        }).done((response) => {
+          const elapsed = Math.round(performance.now() - startedAt);
+          requestStatus.textContent = `응답 완료 · ${elapsed.toLocaleString("ko-KR")}ms`;
+          responseOutput.textContent = JSON.stringify(response, null, 2);
+          responseOutput.hidden = false;
+        }).fail((xhr) => {
+          const elapsed = Math.round(performance.now() - startedAt);
+          requestStatus.textContent = xhr.status ? `오류 응답 · HTTP ${xhr.status} · ${elapsed.toLocaleString("ko-KR")}ms` : "요청에 실패했습니다. server.py가 실행 중인지 확인해 주세요.";
+          responseOutput.textContent = JSON.stringify(xhr.responseJSON ?? xhr.responseText ?? "네트워크 오류", null, 2);
+          responseOutput.hidden = false;
+        }).always(() => {
+          button.disabled = false;
+          requestLoading.hidden = true;
+        });
+      }
+      requestButton.addEventListener("click", () => sendPostRequest({ delayInput: "#response-delay", tranIdInput: "#tran-id", button: requestButton }));
+      longResponseButton.addEventListener("click", () => sendPostRequest({ delayInput: "#response-delay", tranIdInput: "#tran-id", button: longResponseButton, longResponse: true }));
+      errorRequestButton.addEventListener("click", () => sendPostRequest({ delayInput: "#error-response-delay", tranIdInput: "#error-tran-id", button: errorRequestButton, forceError: true }));
+
+      if (isReload || !validStates.has(new URLSearchParams(location.search).get("state"))) goHome();
+      render();
+    </script>
+    <script type="module">
+      import recorder from "./js/interaction-recorder.js?v=18";
+
+      recorder.init();
+    </script>
+  </body>
+</html>
