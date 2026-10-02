@@ -162,9 +162,10 @@ function renderTimeline() {
       networkDetails.set(responseDetailId, { title: "응답값 전문", value: responseData });
       networkData = `<div class="network-data"><section><div class="network-data-head"><h3>요청값</h3><button class="detail-button" type="button" data-network-detail="${requestDetailId}">자세히 보기</button></div><pre>${escapeHtml(JSON.stringify(requestData, null, 2))}</pre></section><section><div class="network-data-head"><h3>응답값</h3><button class="detail-button" type="button" data-network-detail="${responseDetailId}">자세히 보기</button></div><pre>${escapeHtml(JSON.stringify(responseData, null, 2))}</pre></section></div>`;
     }
+    const networkExpandable = event.type === "network" ? `<details class="network-expand"><summary>통신 상세 보기</summary><div class="network-expand-content">${networkMeta}${networkData}</div></details>` : `${networkMeta}${networkData}`;
     const targetLine = event.type === "network" ? "" : `<p class="target">${escapeHtml(targetFor(event))}${selector ? ` <code>${escapeHtml(selector)}</code>` : ""}</p>`;
     const networkClass = event.type === "network" ? ` network-event ${networkFailed ? "network-failure" : "network-success"}` : "";
-    return `<article class="event${networkClass}"><div class="event-head"><div class="event-title"><span class="event-kind">${iconFor(event)}</span>${escapeHtml(title)}${requestInfo}</div><time>${escapeHtml(formatTime(event.timestamp))}</time></div>${targetLine}${groupedDetail ? `<p class="detail">${escapeHtml(groupedDetail)}</p>` : ""}${networkMeta}${networkData}</article>`;
+    return `<article class="event${networkClass}"><div class="event-head"><div class="event-title"><span class="event-kind">${iconFor(event)}</span>${escapeHtml(title)}${requestInfo}</div><time>${escapeHtml(formatTime(event.timestamp))}</time></div>${targetLine}${groupedDetail ? `<p class="detail">${escapeHtml(groupedDetail)}</p>` : ""}${networkExpandable}</article>`;
     }).join("");
     const startedAt = block.events[0]?.timestamp;
     const endedAt = blocks[index + 1]?.events[0]?.timestamp || block.events.at(-1)?.timestamp;
