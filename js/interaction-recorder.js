@@ -206,6 +206,7 @@ export function init(options = {}) {
   }
 
   function onKeydown(event) {
+    if (pendingNetworkCount) return;
     const isExportKey = event.code === "KeyZ" || ["z", "ㅋ"].includes(event.key.toLowerCase());
     const isExportShortcut = event.shiftKey && !event.altKey && !event.ctrlKey && !event.metaKey && isExportKey;
     if (isExportShortcut) {
@@ -215,7 +216,6 @@ export function init(options = {}) {
       return;
     }
 
-    if (pendingNetworkCount) return;
     if (["Shift", "Control", "Alt", "Meta"].includes(event.key)) return;
     if (isRecordableTextField(event.target)) return;
 
@@ -297,6 +297,12 @@ export function init(options = {}) {
       desc: request.desc || null,
     }, request.state, { sequence: request.sequence, timestamp: request.requestedAt });
     pendingNetworkCount = Math.max(0, pendingNetworkCount - 1);
+    if (!pendingNetworkCount) {
+      const activeElement = document.activeElement;
+      focusedTextField = isRecordableTextField(activeElement)
+        ? { element: activeElement, initialValue: activeElement.value, state: readState() || unclassifiedGroup }
+        : null;
+    }
   }
 
   jquery?.ajaxPrefilter((settings, originalSettings, xhr) => {
@@ -306,6 +312,7 @@ export function init(options = {}) {
     const body = readAjaxRequestBody(settings.data);
     const tranId = body?.header?.tranId;
     const tranEntry = Object.entries(tranData).find(([, info]) => info?.tranId === tranId);
+    if (!pendingNetworkCount && focusedTextField) focusedTextField.initialValue = focusedTextField.element.value;
     const request = {
       state: readState() || unclassifiedGroup,
       requestedAt: new Date().toISOString(),
